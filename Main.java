@@ -41,8 +41,16 @@ public class Main {
         }
         
         if(maze != null){
-            neighborAssertions(mazeDimension);
-            //solve(maze);
+            initialAssertions(mazeDimension);
+            int x = 0, y = mazeDimension-1;
+            
+            String t5 = "neighborOf(0,0,X,Y)";
+		Query q5 = new Query(t5);
+		System.out.println("each solution of " + t5);
+		while (q5.hasMoreSolutions()) {
+			Map<String, Term> s5 = q5.nextSolution();
+			System.out.println("(" + s5.get("X") + ", " + s5.get("Y") + ")");
+		}
         }
     }
     
@@ -58,9 +66,14 @@ public class Main {
         
         Random rand = new Random();
         
-        //put the wumpus in a random cell
+        //find a random spot to put the wumpus
         int wumpusRow = rand.nextInt(dimension);
         int wumpusColumn = rand.nextInt(dimension);
+        //make sure it's not the starting cell
+        while(wumpusRow==0&&wumpusColumn==dimension-1){
+            wumpusRow = rand.nextInt(dimension);
+            wumpusColumn = rand.nextInt(dimension);
+        }
         result[wumpusRow][wumpusColumn].wumpus = true;
         System.out.println("place wumpus in ("+wumpusRow+", "+wumpusColumn+")");
         //add a stench to the surrounding cells
@@ -117,7 +130,7 @@ public class Main {
                     }
                 }
                 //put every possible position into the knowledge base
-                String assertPos = "((assert(position("+i+","+j+"))))";
+                String assertPos = "assert(position("+i+","+j+"))";
                 Query.hasSolution(assertPos);
             }
         }
@@ -125,48 +138,88 @@ public class Main {
         return result;
     }
     
-    public static void neighborAssertions(int dimension){
+    public static void initialAssertions(int dimension){
+        //assert neighbors and what direction each neighbor is
         for(int i = 0; i < dimension-1; i++){
             for(int j = 0; j < dimension-1; j++){
                 
                 if(i-1>=0){
-                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+(i-1)+","+j+"))))";
-                    Query.hasSolution(assertNeighbor);
-                    
-                    String assertLeft = "((assert(isLeftOf("+i+","+j+","+(i-1)+","+j+"))))";
-                    Query.hasSolution(assertLeft);
+                    String assertNeighborLeft = "assert(neighborOf("+i+","+j+","+(i-1)+","+j+"))";
+                    Query.hasSolution(assertNeighborLeft);
                 }
-                if(i+1<dimension){
-                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+(i+1)+","+j+"))))";
-                    Query.hasSolution(assertNeighbor);
-                    
-                    String assertRight = "((assert(isRightOf("+i+","+j+","+(i+1)+","+j+"))))";
-                    Query.hasSolution(assertRight);
-                }
-                if(j-1>=0){
-                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+i+","+(j-1)+"))))";
-                    Query.hasSolution(assertNeighbor);
-                    
-                    String assertUp = "((assert(isUpOf("+i+","+j+","+i+","+(j-1)+"))))";
-                    Query.hasSolution(assertUp);
-                }
-                if(j+1<dimension){
-                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+i+","+(j+1)+"))))";
-                    Query.hasSolution(assertNeighbor);
-                    
-                    String assertDown = "((assert(isDownOf("+i+","+j+","+i+","+(j+1)+"))))";
-                    Query.hasSolution(assertDown);
-                }
+                String assertLeft = "assert(isLeftOf("+i+","+j+","+(i-1)+","+j+"))";
+                Query.hasSolution(assertLeft);
                 
+                if(i+1<dimension){
+                    String assertNeighborRight = "assert(neighborOf("+i+","+j+","+(i+1)+","+j+"))";
+                    Query.hasSolution(assertNeighborRight);
+                }
+                String assertRight = "assert(isRightOf("+i+","+j+","+(i+1)+","+j+"))";
+                Query.hasSolution(assertRight);
+                
+                if(j-1>=0){
+                    String assertNeighborUp = "assert(neighborOf("+i+","+j+","+i+","+(j-1)+"))";
+                    Query.hasSolution(assertNeighborUp);
+                }
+                String assertUp = "assert(isUpOf("+i+","+j+","+i+","+(j-1)+"))";
+                Query.hasSolution(assertUp);
+                
+                if(j+1<dimension){
+                    String assertNeighborDown = "assert(neighborOf("+i+","+j+","+i+","+(j+1)+"))";
+                    Query.hasSolution(assertNeighborDown);
+                }
+                String assertDown = "assert(isDownOf("+i+","+j+","+i+","+(j+1)+"))";
+                Query.hasSolution(assertDown);
             }
         }
         
-        String t5 = "isRightOf(0,0,X,Y)";
-		Query q5 = new Query(t5);
-		System.out.println("each solution of " + t5);
-		while (q5.hasMoreSolutions()) {
-			Map<String, Term> s5 = q5.nextSolution();
-			System.out.println("X = " + s5.get("X") + ", Y = " + s5.get("Y"));
-		}
+        //make some rules
+        //a cell has a hazard if it either has a wumpus or has a pit
+        String hasHazard = "assert((hasHazard(X,Y):-hasWumpus(X,Y);hasPit(X,Y)))";
+        Query.hasSolution(hasHazard);
+        
+        //a cell has a wumpus in it if all its neighbors have a stench
+        String hasWumpus = "assert(("
+                + "hasWumpus(X1,Y1):-"
+                    //either is a neighbor and is a valid position and has a stench
+                    + "(((isLeftOf(X1,Y1,X2,Y2)),(position(X2,Y2)),(hasStench(X2,Y2)));"
+                    //or is a neighbor and isn't a valid position
+                    + "((isLeftOf(X1,Y1,X2,Y2)),(not(position(X2,Y2))))),"
+                
+                    + "(((isRightOf(X1,Y1,X3,Y3)),(position(X3,Y3)),(hasStench(X3,Y3)));"
+                    + "((isRightOf(X1,Y1,X3,Y3)),(not(position(X3,Y3))))),"
+                    
+                    + "(((isUpOf(X1,Y1,X4,Y4)),(position(X4,Y4)),(hasStench(X4,Y4)));"
+                    + "((isUpOf(X1,Y1,X4,Y4)),(not(position(X4,Y4))))),"
+                
+                    + "(((isDownOf(X1,Y1,X5,Y5)),(position(X5,Y5)),(hasStench(X5,Y5)));"
+                    + "((isDownOf(X1,Y1,X5,Y5)),(not(position(X5,Y5)))))"
+                + "))";
+        Query.hasSolution(hasWumpus);
+        
+        //a cell has a pit in it if all its neighbors have a breeze
+        String hasPit = "assert(("
+                + "hasPit(X1,Y1):-"
+                    //either is a neighbor and is a valid position and has a breeze
+                    + "(((isLeftOf(X1,Y1,X2,Y2)),(position(X2,Y2)),(hasBreeze(X2,Y2)));"
+                    //or is a neighbor and isn't a valid position
+                    + "((isLeftOf(X1,Y1,X2,Y2)),(not(position(X2,Y2))))),"
+                
+                    + "(((isRightOf(X1,Y1,X3,Y3)),(position(X3,Y3)),(hasBreeze(X3,Y3)));"
+                    + "((isRightOf(X1,Y1,X3,Y3)),(not(position(X3,Y3))))),"
+                    
+                    + "(((isUpOf(X1,Y1,X4,Y4)),(position(X4,Y4)),(hasBreeze(X4,Y4)));"
+                    + "((isUpOf(X1,Y1,X4,Y4)),(not(position(X4,Y4))))),"
+                
+                    + "(((isDownOf(X1,Y1,X5,Y5)),(position(X5,Y5)),(hasBreeze(X5,Y5)));"
+                    + "((isDownOf(X1,Y1,X5,Y5)),(not(position(X5,Y5)))))"
+                + "))";
+        Query.hasSolution(hasPit);
+        
+        //a cell has the gold in it if the current cell has a glitter
+        String hasGold = "assert(("
+                + "hasGold(X,Y):-hasGlitter(X,Y)"
+                + "))";
+        Query.hasSolution(hasGold);
     }
 }
