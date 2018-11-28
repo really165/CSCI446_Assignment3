@@ -9,22 +9,27 @@ import java.util.Random;
 public class Main {
     public static void main(String[] args){
         Cell[][] maze = null;
+        int mazeDimension = 0;
         if (args.length == 1) {
             switch (args[0]) {
                 case "4x4":
                     maze = constructMaze(4);
+                    mazeDimension = 4;
                     break;
 
                 case "5x5":
                     maze = constructMaze(5);
+                    mazeDimension = 5;
                     break;
                         
                 case "8x8":
                     maze = constructMaze(8);
+                    mazeDimension = 8;
                     break;
                   
                 case "10x10":
                     maze = constructMaze(10);
+                    mazeDimension = 10;
                     break;
 
                 default:
@@ -35,7 +40,10 @@ public class Main {
             System.err.println("Usage: java assignment2.main DIMENSIONS");
         }
         
-        
+        if(maze != null){
+            neighborAssertions(mazeDimension);
+            //solve(maze);
+        }
     }
     
     public static Cell[][] constructMaze(int dimension){
@@ -108,9 +116,57 @@ public class Main {
                         }
                     }
                 }
+                //put every possible position into the knowledge base
+                String assertPos = "((assert(position("+i+","+j+"))))";
+                Query.hasSolution(assertPos);
             }
         }
         
         return result;
+    }
+    
+    public static void neighborAssertions(int dimension){
+        for(int i = 0; i < dimension-1; i++){
+            for(int j = 0; j < dimension-1; j++){
+                
+                if(i-1>=0){
+                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+(i-1)+","+j+"))))";
+                    Query.hasSolution(assertNeighbor);
+                    
+                    String assertLeft = "((assert(isLeftOf("+i+","+j+","+(i-1)+","+j+"))))";
+                    Query.hasSolution(assertLeft);
+                }
+                if(i+1<dimension){
+                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+(i+1)+","+j+"))))";
+                    Query.hasSolution(assertNeighbor);
+                    
+                    String assertRight = "((assert(isRightOf("+i+","+j+","+(i+1)+","+j+"))))";
+                    Query.hasSolution(assertRight);
+                }
+                if(j-1>=0){
+                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+i+","+(j-1)+"))))";
+                    Query.hasSolution(assertNeighbor);
+                    
+                    String assertUp = "((assert(isUpOf("+i+","+j+","+i+","+(j-1)+"))))";
+                    Query.hasSolution(assertUp);
+                }
+                if(j+1<dimension){
+                    String assertNeighbor = "((assert(neighborOf("+i+","+j+","+i+","+(j+1)+"))))";
+                    Query.hasSolution(assertNeighbor);
+                    
+                    String assertDown = "((assert(isDownOf("+i+","+j+","+i+","+(j+1)+"))))";
+                    Query.hasSolution(assertDown);
+                }
+                
+            }
+        }
+        
+        String t5 = "isRightOf(0,0,X,Y)";
+		Query q5 = new Query(t5);
+		System.out.println("each solution of " + t5);
+		while (q5.hasMoreSolutions()) {
+			Map<String, Term> s5 = q5.nextSolution();
+			System.out.println("X = " + s5.get("X") + ", Y = " + s5.get("Y"));
+		}
     }
 }
