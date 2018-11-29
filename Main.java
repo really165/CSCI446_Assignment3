@@ -42,15 +42,14 @@ public class Main {
         
         if(maze != null){
             initialAssertions(mazeDimension);
-            int x = 0, y = mazeDimension-1;
+            int row = 4, column = 0;
+            perceive(maze, row, column);
             
-            String t5 = "neighborOf(0,0,X,Y)";
-		Query q5 = new Query(t5);
-		System.out.println("each solution of " + t5);
-		while (q5.hasMoreSolutions()) {
-			Map<String, Term> s5 = q5.nextSolution();
-			System.out.println("(" + s5.get("X") + ", " + s5.get("Y") + ")");
-		}
+            String dangerousToMove = "dangerousToMove("+row+","+column+")";
+            System.out.println(dangerousToMove +" "+ Query.hasSolution(dangerousToMove));
+            
+            String safeMove = "safeMove(4,0,4,1)";
+            System.out.println(safeMove +" "+ Query.hasSolution(safeMove));
         }
     }
     
@@ -140,47 +139,76 @@ public class Main {
     
     public static void initialAssertions(int dimension){
         //assert neighbors and what direction each neighbor is
-        for(int i = 0; i < dimension-1; i++){
-            for(int j = 0; j < dimension-1; j++){
+        for(int i = 0; i < dimension; i++){
+            for(int j = 0; j < dimension; j++){
                 
                 if(i-1>=0){
-                    String assertNeighborLeft = "assert(neighborOf("+i+","+j+","+(i-1)+","+j+"))";
+                    String assertNeighborLeft = "assert(neighborLeft("+i+","+j+","+(i-1)+","+j+"))";
                     Query.hasSolution(assertNeighborLeft);
+                    String assertNeighbor = "assert(neighborOf("+i+","+j+","+(i-1)+","+j+"))";
+                    Query.hasSolution(assertNeighbor);
                 }
                 String assertLeft = "assert(isLeftOf("+i+","+j+","+(i-1)+","+j+"))";
                 Query.hasSolution(assertLeft);
                 
                 if(i+1<dimension){
-                    String assertNeighborRight = "assert(neighborOf("+i+","+j+","+(i+1)+","+j+"))";
+                    String assertNeighborRight = "assert(neighborRight("+i+","+j+","+(i+1)+","+j+"))";
                     Query.hasSolution(assertNeighborRight);
+                    String assertNeighbor = "assert(neighborOf("+i+","+j+","+(i+1)+","+j+"))";
+                    Query.hasSolution(assertNeighbor);
                 }
                 String assertRight = "assert(isRightOf("+i+","+j+","+(i+1)+","+j+"))";
                 Query.hasSolution(assertRight);
                 
                 if(j-1>=0){
-                    String assertNeighborUp = "assert(neighborOf("+i+","+j+","+i+","+(j-1)+"))";
+                    String assertNeighborUp = "assert(neighborUp("+i+","+j+","+i+","+(j-1)+"))";
                     Query.hasSolution(assertNeighborUp);
+                    String assertNeighbor = "assert(neighborOf("+i+","+j+","+i+","+(j-1)+"))";
+                    Query.hasSolution(assertNeighbor);
                 }
                 String assertUp = "assert(isUpOf("+i+","+j+","+i+","+(j-1)+"))";
                 Query.hasSolution(assertUp);
                 
                 if(j+1<dimension){
-                    String assertNeighborDown = "assert(neighborOf("+i+","+j+","+i+","+(j+1)+"))";
+                    String assertNeighborDown = "assert(neighborDown("+i+","+j+","+i+","+(j+1)+"))";
                     Query.hasSolution(assertNeighborDown);
+                    String assertNeighbor = "assert(neighborOf("+i+","+j+","+i+","+(j+1)+"))";
+                    Query.hasSolution(assertNeighbor);
                 }
                 String assertDown = "assert(isDownOf("+i+","+j+","+i+","+(j+1)+"))";
                 Query.hasSolution(assertDown);
             }
         }
         
-        //make some rules
         //a cell has a hazard if it either has a wumpus or has a pit
         String hasHazard = "assert((hasHazard(X,Y):-hasWumpus(X,Y);hasPit(X,Y)))";
         Query.hasSolution(hasHazard);
         
+        //assert the corners
+        String corner = "assert(("
+                + "isCorner(X,Y):-"
+                    + "((X=0),(Y=0));"
+                    + "((X=0),(Y="+(dimension-1)+"));"
+                    + "((X="+(dimension-1)+"),(Y=0));"
+                    + "((X="+(dimension-1)+"),(Y="+(dimension-1)+"))"
+                + "))";
+        Query.hasSolution(corner);
+        
+        //assert the valid positions
+        String validPosition = "assert(("
+                + "position(X,Y):-"
+                    //X is within a certain range
+                    + "X>=0,X<"+dimension+","
+                    //Y is within a certain range
+                    + "Y>=0,Y<"+dimension
+                + "))";
+        Query.hasSolution(validPosition);
+        
         //a cell has a wumpus in it if all its neighbors have a stench
         String hasWumpus = "assert(("
                 + "hasWumpus(X1,Y1):-"
+                    //can't be a corner
+                    + "(not(isCorner(X1,Y1))),"
                     //either is a neighbor and is a valid position and has a stench
                     + "(((isLeftOf(X1,Y1,X2,Y2)),(position(X2,Y2)),(hasStench(X2,Y2)));"
                     //or is a neighbor and isn't a valid position
@@ -200,6 +228,8 @@ public class Main {
         //a cell has a pit in it if all its neighbors have a breeze
         String hasPit = "assert(("
                 + "hasPit(X1,Y1):-"
+                    //can't be a corner
+                    + "(not(isCorner(X1,Y1))),"
                     //either is a neighbor and is a valid position and has a breeze
                     + "(((isLeftOf(X1,Y1,X2,Y2)),(position(X2,Y2)),(hasBreeze(X2,Y2)));"
                     //or is a neighbor and isn't a valid position
@@ -221,5 +251,59 @@ public class Main {
                 + "hasGold(X,Y):-hasGlitter(X,Y)"
                 + "))";
         Query.hasSolution(hasGold);
+        
+        //put dummy variables in an invalid position so the queries are defined initially
+        String dummyStench = "assert(hasStench("+dimension+","+dimension+"))";
+        Query.hasSolution(dummyStench);
+        String dummyBreeze = "assert(hasBreeze("+dimension+","+dimension+"))";
+        Query.hasSolution(dummyBreeze);
+        String dummyGlitter = "assert(hasGlitter("+dimension+","+dimension+"))";
+        Query.hasSolution(dummyGlitter);
+        
+        //visit the starting cell
+        String visited = "assert(visited(0,"+dimension+"))";
+        Query.hasSolution(visited);
+        
+        //move is not dangerous
+        String dangerousToMove = "assert(("
+                + "dangerousToMove(X,Y):-"
+                    + "(hasStench(X,Y);"
+                    + "hasBreeze(X,Y)),"
+                    + "position(X,Y)"
+                + "))";
+        Query.hasSolution(dangerousToMove);
+        
+        String safeMove = "assert(("
+                + "safeMove(X1,Y1,X2,Y2):-"
+                    //second cell hasn't been visited
+                    + "not(visited(X2,Y2)),"
+                    //doesn't have a hazard
+                    + "not(hasStench(X1,Y1)),"
+                    + "not(hasBreeze(X1,Y1)),"
+                    //is a neighbor
+                    + "neighborOf(X1,Y1,X2,Y2),"
+                    //is a valid position
+                    + "position(X1,Y1),"
+                    //is a valid position
+                    + "position(X2,Y2)"
+                + "))";
+        Query.hasSolution(safeMove);
+    }
+    
+    public static void perceive(Cell[][] maze, int row, int column){
+        if(maze[row][column].breeze){
+            System.out.println("current position hasBreeze");
+            String hasBreeze = "assert(hasBreeze("+row+","+column+"))";
+            Query.hasSolution(hasBreeze);
+        }
+        if(maze[row][column].stench){
+            System.out.println("current position hasStench");
+            String hasStench = "assert(hasStench("+row+","+column+"))";
+            Query.hasSolution(hasStench);
+        }
+        if(maze[row][column].glitter){
+            String hasGlitter = "assert(hasGlitter("+row+","+column+"))";
+            Query.hasSolution(hasGlitter);
+        }
     }
 }
