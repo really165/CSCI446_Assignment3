@@ -261,7 +261,7 @@ public class Main {
         Query.hasSolution(dummyGlitter);
         
         //visit the starting cell
-        String visited = "assert(visited(0,"+dimension+"))";
+        String visited = "assert(visited(0,"+dimension-1+"))";
         Query.hasSolution(visited);
         
         //move is not dangerous
