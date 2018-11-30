@@ -45,9 +45,9 @@ public class Main {
             int row = 4, column = 0;
             perceive(maze, row, column);
             
-            String dangerousToMove = "dangerousToMove("+row+","+column+")";
-            System.out.println(dangerousToMove +" "+ Query.hasSolution(dangerousToMove));
-
+            String safeFrontier = "safeFrontier("+row+","+column+",X2,Y2)";
+            System.out.println(safeFrontier +" "+ Query.hasSolution(safeFrontier));
+            /*
             String t5 = "safeMove("+row+","+column+",X2,Y2)";
 		Query q5 = new Query(t5);
 		System.out.println("each solution of " + t5);
@@ -55,6 +55,7 @@ public class Main {
 			Map<String, Term> s5 = q5.nextSolution();
 			System.out.println("X2 = " + s5.get("X2") + ", Y2 = " + s5.get("Y2"));
 		}
+            */
         }
     }
     
@@ -275,6 +276,29 @@ public class Main {
                     + "position(X2,Y2)"
                 + "))";
         Query.hasSolution(safeMove);
+        
+        //make first move
+        String move = "assert((move("+(dimension-1)+",0,0)))";
+        Query.hasSolution(move);
+        
+        String safeFrontier = "assert(("
+                + "safeFrontier(X1,Y1,X2,Y2):-"
+                    //first an second position are different
+                    + "dif(position(X1,Y1),position(X2,Y2)),"
+                    //first position is a valid
+                    + "position(X1,Y1),"
+                    //second position is a valid
+                    + "position(X2,Y2),"
+                    //first and second cell are neighbors
+                    + "neighborOf(X1,Y1,X2,Y2),"
+                    //first cell has been moved to already
+                    + "move(X1,Y1,T),"
+                    //second cell has not been moved to already
+                    + "not(move(X2,Y2,T)),"
+                    //isn't dangerous to move from the first cell
+                    + "not(dangerousToMove(X1,Y1))"
+                + "))";
+        Query.hasSolution(safeFrontier);
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
