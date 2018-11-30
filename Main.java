@@ -462,9 +462,9 @@ public class Main {
             Map<String, Term> results = adj.oneSolution();
             int x1 = java.lang.Integer.parseInt(results.get("X").toString());
             int y1 = java.lang.Integer.parseInt(results.get("Y").toString());
-            //assert a new move at the new current time
+            //assert a new move at the new current time, put move at top of results
             //also increment it by 1
-            String newMove = "assert((move("+x1+","+y1+","+(newCurrentTime++)+")))";
+            String newMove = "asserta((move("+x1+","+y1+","+(newCurrentTime++)+")))";
             Query.hasSolution(newMove);
             //decrement time1 so the next previous move can be found
             time1--;
