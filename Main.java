@@ -47,9 +47,14 @@ public class Main {
             
             String dangerousToMove = "dangerousToMove("+row+","+column+")";
             System.out.println(dangerousToMove +" "+ Query.hasSolution(dangerousToMove));
-            
-            String safeMove = "safeMove(4,0,4,1)";
-            System.out.println(safeMove +" "+ Query.hasSolution(safeMove));
+
+            String t5 = "safeMove("+row+","+column+",X2,Y2)";
+		Query q5 = new Query(t5);
+		System.out.println("each solution of " + t5);
+		while (q5.hasMoreSolutions()) {
+			Map<String, Term> s5 = q5.nextSolution();
+			System.out.println("X2 = " + s5.get("X2") + ", Y2 = " + s5.get("Y2"));
+		}
         }
     }
     
@@ -194,16 +199,6 @@ public class Main {
                 + "))";
         Query.hasSolution(corner);
         
-        //assert the valid positions
-        String validPosition = "assert(("
-                + "position(X,Y):-"
-                    //X is within a certain range
-                    + "X>=0,X<"+dimension+","
-                    //Y is within a certain range
-                    + "Y>=0,Y<"+dimension
-                + "))";
-        Query.hasSolution(validPosition);
-        
         //a cell has a wumpus in it if all its neighbors have a stench
         String hasWumpus = "assert(("
                 + "hasWumpus(X1,Y1):-"
@@ -260,30 +255,22 @@ public class Main {
         String dummyGlitter = "assert(hasGlitter("+dimension+","+dimension+"))";
         Query.hasSolution(dummyGlitter);
         
-        //visit the starting cell
-        String visited = "assert(visited(0,"+dimension-1+"))";
-        Query.hasSolution(visited);
-        
         //move is not dangerous
         String dangerousToMove = "assert(("
                 + "dangerousToMove(X,Y):-"
                     + "(hasStench(X,Y);"
-                    + "hasBreeze(X,Y)),"
-                    + "position(X,Y)"
+                    + "hasBreeze(X,Y))"
                 + "))";
         Query.hasSolution(dangerousToMove);
         
         String safeMove = "assert(("
                 + "safeMove(X1,Y1,X2,Y2):-"
-                    //second cell hasn't been visited
-                    + "not(visited(X2,Y2)),"
-                    //doesn't have a hazard
-                    + "not(hasStench(X1,Y1)),"
-                    + "not(hasBreeze(X1,Y1)),"
+                    //the two cells aren't the same
+                    + "dif(position(X1,Y1),position(X2,Y2)),"
+                    //isn't close to a hazard
+                    + "not(dangerousToMove(X1,Y1)),"
                     //is a neighbor
                     + "neighborOf(X1,Y1,X2,Y2),"
-                    //is a valid position
-                    + "position(X1,Y1),"
                     //is a valid position
                     + "position(X2,Y2)"
                 + "))";
