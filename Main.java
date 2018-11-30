@@ -77,6 +77,8 @@ public class Main {
                     //asserts moves needed to make it to the new position
                     //returns an updated time
                     time = backtrack(time, nextMove.time);
+                    row = nextMove.row;
+                    column = nextMove.column;
                 }
             }
         }
