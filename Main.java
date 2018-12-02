@@ -45,7 +45,7 @@ public class Main {
             //starts at the start position at time 0
             int row = mazeDimension-1, column = 0, time = 0;
             perceive(maze, row, column);
-            
+            printMaze(maze);
             /*
             String safeFrontier = "nextMove("+row+","+column+",X2,Y2)";
             System.out.println(safeFrontier +" "+ Query.hasSolution(safeFrontier));
@@ -100,7 +100,7 @@ public class Main {
         int wumpusRow = rand.nextInt(dimension);
         int wumpusColumn = rand.nextInt(dimension);
         //make sure it's not the starting cell
-        while(wumpusRow==0&&wumpusColumn==dimension-1){
+        while(wumpusRow==(dimension-1)&&wumpusColumn==0){
             wumpusRow = rand.nextInt(dimension);
             wumpusColumn = rand.nextInt(dimension);
         }
@@ -123,22 +123,22 @@ public class Main {
         //find a random cell
         int goldRow = rand.nextInt(dimension);
         int goldColumn = rand.nextInt(dimension);
-        //put the gold in a cell that doesn't have the wumpus
-        while(result[goldRow][goldColumn].wumpus){
+        //put the gold in a cell that doesn't have the wumpus or a pit
+        while(result[goldRow][goldColumn].wumpus||result[goldRow][goldColumn].pit){
             goldRow = rand.nextInt(dimension);
             goldColumn = rand.nextInt(dimension);
         }
-        result[wumpusRow][wumpusColumn].gold = true;
+        result[goldRow][goldColumn].gold = true;
         System.out.println("place gold in ("+goldRow+", "+goldColumn+")");
         //add a glitter to the cell
-        result[wumpusRow][wumpusColumn].glitter = true;
+        result[goldRow][goldColumn].glitter = true;
         
         //add in the pits at 20% probability
         //go through each of the cells
         for(int i = 0; i < result.length; i++){
             for(int j = 0; j < result[0].length; j++){
                 //if there's no gold and no wumpus in the cell and it's not the starting cell
-                if(!result[i][j].gold&&!result[i][j].wumpus&&i!=0&&j!=dimension-1){
+                if(!result[i][j].gold&&!result[i][j].wumpus&&i!=dimension-1&&j!=0){
                     int pitProbability = rand.nextInt(100);
                     if(pitProbability<20){
                         //place a pit in the cell
@@ -474,7 +474,24 @@ public class Main {
         return newCurrentTime;
     }
     
-    public static void incrementTime(int t){
-        t++;
+    public static void printMaze(Cell[][] maze){
+        for(int i = 0; i < maze.length; i++){
+            String line = "";
+            for(int j = 0; j < maze[0].length; j++){
+                if(maze[i][j].gold){
+                    line+="g ";
+                }
+                else if(maze[i][j].pit){
+                    line+="p ";
+                }
+                else if(maze[i][j].wumpus){
+                    line+="w ";
+                }
+                else{
+                    line+="_ ";
+                }
+            }
+            System.out.println(line);
+        }
     }
 }
