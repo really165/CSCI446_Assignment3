@@ -51,23 +51,32 @@ public class Main {
                 perceive(maze, row, column);
                 //if there's no gold in the current cell
                 if(!maze[row][column].glitter){
-                    //find the next move
-                    Cell nextMove = nextMove(row,column,time);
-                    //if a valid move was found
-                    if(nextMove != null){
-                        //update current position and time
-                        row = nextMove.row;
-                        column = nextMove.column;
-                        time++;
-                        //assert the new move
-                        String move = "asserta((move("+row+","+column+","+time+")))";
-                        Query.hasSolution(move);
-                        String visited = "asserta((visited("+row+","+column+")))";
-                        Query.hasSolution(visited);
-                        System.out.println("moved to (" + row + ", " + column + "): current time is " + time);
+                    //check if there's a hazard
+                    if(!maze[row][column].wumpus&&!maze[row][column].pit){
+                        //find the next move
+                        Cell nextMove = nextMove(row,column,time);
+                        //if a valid move was found
+                        if(nextMove != null){
+                            //update current position and time
+                            row = nextMove.row;
+                            column = nextMove.column;
+                            time++;
+                            //assert the new move
+                            String move = "asserta((move("+row+","+column+","+time+")))";
+                            Query.hasSolution(move);
+                            String visited = "asserta((visited("+row+","+column+")))";
+                            Query.hasSolution(visited);
+                            System.out.println("moved to (" + row + ", " + column + "): current time is " + time);
+                        }
+                        //there are no available moves for some reason
+                        else{
+                            System.out.println("No available moves");
+                            break;
+                        }
                     }
+                    //there's a hazard in the current cell
                     else{
-                        //no move found; break
+                        System.out.println("You heckin died boi");
                         break;
                     }
                 }
@@ -333,6 +342,8 @@ public class Main {
                     + "not(hasHazard(X2,Y2))"
                 + "))";
         Query.hasSolution(dangerousMove);
+        
+        //more cases where there definitely will be a wumpus
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
