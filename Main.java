@@ -44,41 +44,37 @@ public class Main {
             initialAssertions(mazeDimension);
             //starts at the start position at time 0
             int row = mazeDimension-1, column = 0, time = 0;
-            perceive(maze, row, column);
             printMaze(maze);
-            /*
-            String safeFrontier = "nextMove("+row+","+column+",X2,Y2)";
-            System.out.println(safeFrontier +" "+ Query.hasSolution(safeFrontier));
-            */
-            String t5 = "safeMove("+row+","+column+",X2,Y2)";
-		Query q5 = new Query(t5);
-		System.out.println("each solution of " + t5);
-		while (q5.hasMoreSolutions()) {
-			Map<String, Term> s5 = q5.nextSolution();
-			System.out.println("X2 = " + s5.get("X2") + ", Y2 = " + s5.get("Y2"));
-		}
-            
-            Cell nextMove = nextMove(row,column,time);
-            //if a next move was found
-            if(nextMove != null){
-                //if the cell can be reached from current position
-                if(nextMove.time == time){
-                    //update current position and time
-                    row = nextMove.row;
-                    column = nextMove.column;
-                    time++;
-                    //assert the new move
-                    String move = "assert((move("+row+","+column+","+time+")))";
-                    Query.hasSolution(move);
+
+            for(int i = 0; i < 5; i++){
+                //see what's in the current cell
+                perceive(maze, row, column);
+                //if there's no gold in the current cell
+                if(!maze[row][column].glitter){
+                    //find the next move
+                    Cell nextMove = nextMove(row,column,time);
+                    //if a valid move was found
+                    if(nextMove != null){
+                        //update current position and time
+                        row = nextMove.row;
+                        column = nextMove.column;
+                        time++;
+                        //assert the new move
+                        String move = "asserta((move("+row+","+column+","+time+")))";
+                        Query.hasSolution(move);
+                        String visited = "asserta((visited("+row+","+column+")))";
+                        Query.hasSolution(visited);
+                        System.out.println("moved to (" + row + ", " + column + "): current time is " + time);
+                    }
+                    else{
+                        //no move found; break
+                        break;
+                    }
                 }
-                //if the cell can't be reached from current position
-                else if(nextMove.time != time){
-                    //we need to backtrack
-                    //asserts moves needed to make it to the new position
-                    //returns an updated time
-                    time = backtrack(time, nextMove.time);
-                    row = nextMove.row;
-                    column = nextMove.column;
+                //if there is gold in the current cell
+                else{
+                    System.out.println("We found the gold");
+                    break;
                 }
             }
         }
@@ -292,6 +288,9 @@ public class Main {
         //make first move
         String move = "assert((move("+(dimension-1)+",0,0)))";
         Query.hasSolution(move);
+        //visit first position
+        String visited = "assert((visited("+(dimension-1)+",0)))";
+        Query.hasSolution(visited);
         
         //finds move guaranteed to be safe
         String safeMove = "assert(("
@@ -304,10 +303,10 @@ public class Main {
                     + "position(X2,Y2),"
                     //first and second cell are neighbors
                     + "neighborOf(X1,Y1,X2,Y2),"
-                    //first cell has been moved to already
-                    + "move(X1,Y1,T),"
-                    //second cell has not been moved to already
-                    + "not(move(X2,Y2,T)),"
+                    //first cell has been visited already
+                    + "visited(X1,Y1),"
+                    //second cell has not been visited already
+                    + "not(visited(X2,Y2)),"
                     //isn't dangerous to move from the first cell
                     + "not(dangerousToMove(X1,Y1))"
                 + "))";
@@ -324,35 +323,16 @@ public class Main {
                     + "position(X1,Y1),"
                     //second position is a valid
                     + "position(X2,Y2),"
-                    //first cell has been moved to already
-                    + "move(X1,Y1,T),"
-                    //second cell has not been moved to already
-                    + "not(move(X2,Y2,T)),"
+                    //first cell has been visited already
+                    + "visited(X1,Y1),"
+                    //second cell has not been visited already
+                    + "not(visited(X2,Y2)),"
                     //it's dangerous to move from the first cell
                     + "dangerousToMove(X1,Y1),"
                     //there isn't a hazard there as far as we know
                     + "not(hasHazard(X2,Y2))"
                 + "))";
         Query.hasSolution(dangerousMove);
-        
-        //takes a new position
-        //returns an existing move adjacent to new position
-        String existingMoveAdjacentToNewPosition = "assert(("
-                + "existingMoveAdjacentToNewPosition(X1,Y1,X2,Y2):-"
-                    //first an second position are different
-                    + "dif(position(X1,Y1),position(X2,Y2)),"
-                    //first position is a valid
-                    + "position(X1,Y1),"
-                    //second position is a valid
-                    + "position(X2,Y2),"
-                    //first position has been moved to at some point
-                    + "move(X1,Y1,T),"
-                    //second cell has not been moved to already
-                    + "not(move(X2,Y2,T)),"
-                    //first and second cell are neighbors
-                    + "neighborOf(X1,Y1,X2,Y2)"
-                + "))";
-         Query.hasSolution(existingMoveAdjacentToNewPosition);
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
@@ -375,7 +355,7 @@ public class Main {
     //takes in current position and time
     //returns cell with the coordinates of new move
     //and time that the cell that was moved from was moved to
-    public static Cell nextMove(int row1, int column1, int time1){
+    public static Cell nextMove(int row1, int column1, int time){
         Cell result = null;
         
         String safeAdjacent = "safeMove("+row1+","+column1+",X,Y)";
@@ -390,88 +370,49 @@ public class Main {
             Map<String, Term> results = adj.oneSolution();
             int row2 = java.lang.Integer.parseInt(results.get("X").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
-            result = new Cell(row2,column2,time1);
+            result = new Cell(row2,column2,time);
         }
         //if there's a safe move on the frontier
         else if(Query.hasSolution(safeFrontier)){
             System.out.println("There's a safe move on the frontier");
-            //retrieve the position of the safe move
-            Query frontier = new Query(safeFrontier);
-            Map<String, Term> results = frontier.oneSolution();
-            //find the row and column of the new position
-            int row2 = java.lang.Integer.parseInt(results.get("X2").toString());
-            int column2 = java.lang.Integer.parseInt(results.get("Y2").toString());
-            //find the time that a move adjacent to the new position was made
-            int time2 = moveAtTime(row2,column2);
-            //make a cell with the new position
-            //and the time that the position adjacent to the new position was moved to
-            result = new Cell(row2,column2,time2);
+            //backtrack
+            result = previousMove(time);
         }
         //if there's a dangerous move adjacent to current position
         else if(Query.hasSolution(dangerousAdjacent)){
             System.out.println("There's a dangerous move adjacent to current position");
-            
+            //retrieve the position of the dangerous move
+            Query adj = new Query(dangerousAdjacent);
+            Map<String, Term> results = adj.oneSolution();
+            int row2 = java.lang.Integer.parseInt(results.get("X").toString());
+            int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
+            result = new Cell(row2,column2,time);
         }
         //is there's a dangerous move on the frontier
-        else if(Query.hasSolution(dangerousAdjacent)){
+        else if(Query.hasSolution(dangerousFrontier)){
             System.out.println("There's a dangerous move on the frontier");
-            
+            //backtrack
+            result = previousMove(time);
         }
         
         return result;
     }
     
-    //takes in coordinate of second cell
-    //returns the time that an adjacent first cell was moved to
-    public static int moveAtTime(int row2, int column2){
-        int time = -1;
+    //takes in current time
+    //returns position of the previous move
+    public static Cell previousMove(int time){
+        Cell result = null;
         //finds an existing move adjacent to the new position
-        String existingMoveAdjacentToNewPosition = "existingMoveAdjacentToNewPosition(X1,X2,"+row2+","+column2+")";
-        if(Query.hasSolution(existingMoveAdjacentToNewPosition)){
-            Query findCoordinate = new Query(existingMoveAdjacentToNewPosition);
-            Map<String, Term> results = findCoordinate.oneSolution();
-            //find the row and column of the existing move adjacent to the new position
-            int row1 = java.lang.Integer.parseInt(results.get("X1").toString());
-            int column1 = java.lang.Integer.parseInt(results.get("Y1").toString());
-            //find the most recent time the move was made
-            //by passing in the row and column of the existing move
-            String timeTheMoveWasMade = "move("+row1+","+column1+",T)";
-            if(Query.hasSolution(timeTheMoveWasMade)){
-                Query findTime = new Query(timeTheMoveWasMade);
-                Map<String, Term> timeResult = findTime.oneSolution();
-                time = java.lang.Integer.parseInt(timeResult.get("T").toString());
-            }
+        String lastMove = "move(X,Y,"+(time-1)+")";
+        if(Query.hasSolution(lastMove)){
+            Query last = new Query(lastMove);
+            Map<String, Term> results = last.oneSolution();
+            //find the row and column of the previous move
+            int row = java.lang.Integer.parseInt(results.get("X").toString());
+            int column = java.lang.Integer.parseInt(results.get("Y").toString());
+            result = new Cell(row, column, (time-1));
         }
-        return time;
-    }
-    
-    //HAS NOT BEEN TESTED YET
-    //time1 is the current time
-    //time2 is the time of the existing move that was made to the position that is adjacent to the new position
-    //returns the updated time
-    public static int backtrack(int t1, int t2){
-        int time1 = t1;
-        int time2 = t2;
-        //keeps track of what the updated time will be
-        int newCurrentTime = t1;
-        //while we still aren't at the new position
-        while(time1>time2){
-            //find the coordinates of the next position
-            //meaning the move that came before the move at time1
-            String currentPos = "move(X,Y,"+(time1-1)+")";
-            Query.hasSolution(currentPos);
-            Query adj = new Query(currentPos);
-            Map<String, Term> results = adj.oneSolution();
-            int x1 = java.lang.Integer.parseInt(results.get("X").toString());
-            int y1 = java.lang.Integer.parseInt(results.get("Y").toString());
-            //assert a new move at the new current time, put move at top of results
-            //also increment it by 1
-            String newMove = "asserta((move("+x1+","+y1+","+(newCurrentTime++)+")))";
-            Query.hasSolution(newMove);
-            //decrement time1 so the next previous move can be found
-            time1--;
-        }
-        return newCurrentTime;
+        return result;
     }
     
     public static void printMaze(Cell[][] maze){
