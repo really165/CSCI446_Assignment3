@@ -230,48 +230,6 @@ public class Main {
                 + "))";
         Query.hasSolution(corner);
         
-        //a cell has a wumpus in it if all its neighbors have a stench
-        String hasWumpus = "assert(("
-                + "hasWumpus(X1,Y1):-"
-                    //can't be a corner
-                    + "(not(isCorner(X1,Y1))),"
-                    //either is a neighbor and is a valid position and has a stench
-                    + "(((isLeftOf(X1,Y1,X2,Y2)),(position(X2,Y2)),(hasStench(X2,Y2)));"
-                    //or is a neighbor and isn't a valid position
-                    + "((isLeftOf(X1,Y1,X2,Y2)),(not(position(X2,Y2))))),"
-                
-                    + "(((isRightOf(X1,Y1,X3,Y3)),(position(X3,Y3)),(hasStench(X3,Y3)));"
-                    + "((isRightOf(X1,Y1,X3,Y3)),(not(position(X3,Y3))))),"
-                    
-                    + "(((isUpOf(X1,Y1,X4,Y4)),(position(X4,Y4)),(hasStench(X4,Y4)));"
-                    + "((isUpOf(X1,Y1,X4,Y4)),(not(position(X4,Y4))))),"
-                
-                    + "(((isDownOf(X1,Y1,X5,Y5)),(position(X5,Y5)),(hasStench(X5,Y5)));"
-                    + "((isDownOf(X1,Y1,X5,Y5)),(not(position(X5,Y5)))))"
-                + "))";
-        Query.hasSolution(hasWumpus);
-        
-        //a cell has a pit in it if all its neighbors have a breeze
-        String hasPit = "assert(("
-                + "hasPit(X1,Y1):-"
-                    //can't be a corner
-                    + "(not(isCorner(X1,Y1))),"
-                    //either is a neighbor and is a valid position and has a breeze
-                    + "(((isLeftOf(X1,Y1,X2,Y2)),(position(X2,Y2)),(hasBreeze(X2,Y2)));"
-                    //or is a neighbor and isn't a valid position
-                    + "((isLeftOf(X1,Y1,X2,Y2)),(not(position(X2,Y2))))),"
-                
-                    + "(((isRightOf(X1,Y1,X3,Y3)),(position(X3,Y3)),(hasBreeze(X3,Y3)));"
-                    + "((isRightOf(X1,Y1,X3,Y3)),(not(position(X3,Y3))))),"
-                    
-                    + "(((isUpOf(X1,Y1,X4,Y4)),(position(X4,Y4)),(hasBreeze(X4,Y4)));"
-                    + "((isUpOf(X1,Y1,X4,Y4)),(not(position(X4,Y4))))),"
-                
-                    + "(((isDownOf(X1,Y1,X5,Y5)),(position(X5,Y5)),(hasBreeze(X5,Y5)));"
-                    + "((isDownOf(X1,Y1,X5,Y5)),(not(position(X5,Y5)))))"
-                + "))";
-        Query.hasSolution(hasPit);
-        
         //a cell has the gold in it if the current cell has a glitter
         String hasGold = "assert(("
                 + "hasGold(X,Y):-hasGlitter(X,Y)"
@@ -338,12 +296,138 @@ public class Main {
                     + "not(visited(X2,Y2)),"
                     //it's dangerous to move from the first cell
                     + "dangerousToMove(X1,Y1),"
-                    //there isn't a hazard there as far as we know
+                    //there definitely isn't a hazard there
                     + "not(hasHazard(X2,Y2))"
                 + "))";
         Query.hasSolution(dangerousMove);
         
-        //more cases where there definitely will be a wumpus
+        //cases where there definitely will be a wumpus
+        //case 1
+        //  s
+        //s w
+        //  s
+        //if we know three squares around a square have a stench
+        //then that cell definitely has a wumpus
+        String case1wumpus = "assert(("
+            + "case1wumpus(X0,Y0):-"
+                //they're all different cells
+                //0 dif 1,2,3
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
+                //1 dif 2,3
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),"
+                //2 dif 3
+                + "dif(position(X2,Y2),position(X3,Y3)),"
+                
+                //X1,Y1 is a neighbor of X0,Y0 and has a stench
+                + "neighborOf(X0,Y0,X1,Y1),hasStench(X1,Y1),"
+                //X2,Y2 is a neighbor of X0,Y0 and has a stanch
+                + "neighborOf(X0,Y0,X2,Y2),hasStench(X2,Y2),"
+                //X3,Y3 is a neighbor of X0,Y0 and has a stench
+                + "neighborOf(X0,Y0,X3,Y3),hasStench(X3,Y3)"
+            + "))";
+        Query.hasSolution(case1wumpus);
+        
+        //          not(s)
+        //not(s)    s       w
+        //          not(s)
+        //if three cells around a smelly cell are not smelly
+        //then the remaining cell is definitely a wumpus
+        String case2wumpus = "assert(("
+            + "case2wumpus(X0,Y0):-"
+                //they're all different cells
+                //0 dif 1,2,3,4
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),dif(position(X0,Y0),position(X4,Y4)),"
+                //1 dif 2,3,4
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),dif(position(X1,Y1),position(X4,Y4)),"
+                //2 dif 3,4
+                + "dif(position(X2,Y2),position(X3,Y3)),dif(position(X2,Y2),position(X4,Y4)),"
+                //3 dif 4
+                + "dif(position(X3,Y3),position(X4,Y4)),"
+                
+                //X2,Y2 is a neighbor and does have a stench
+                + "neighborOf(X0,Y0,X2,Y2),hasStench(X2,Y2),"
+                //X1,Y1 is a neighbor and does not have a stench
+                + "neighborOf(X0,Y0,X1,Y1),not(hasStench(X1,Y1)),"
+                //X3,Y3 is a neighbor and does not have a stench
+                + "neighborOf(X0,Y0,X3,Y3),not(hasStench(X3,Y3)),"
+                //X4,Y4 is a neighbor and does not have a stanch
+                + "neighborOf(X0,Y0,X4,Y4),not(hasStench(X4,Y4))"
+            + "))";
+        Query.hasSolution(case2wumpus);
+        
+        //handles cases where there is definitely a wumpus
+        String hasWumpus = "assert(("
+                + "hasWumpus(X,Y):-"
+                    //first case is true or
+                    + "case1wumpus(X,Y);"
+                    //second case is true
+                    + "case2wumpus(X,Y)"
+                + "))";
+        Query.hasSolution(hasWumpus);
+        
+        //cases where there definitely will be a wumpus
+        //case 1
+        //  b
+        //b w
+        //  b
+        //if we know three squares around a square have a breeze
+        //then that cell definitely has a pit
+        String case1pit = "assert(("
+            + "case1pit(X0,Y0):-"
+                //they're all different cells
+                //0 dif 1,2,3
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
+                //1 dif 2,3
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),"
+                //2 dif 3
+                + "dif(position(X2,Y2),position(X3,Y3)),"
+                
+                //X1,Y1 is a neighbor of X0,Y0 and has a stench
+                + "neighborOf(X0,Y0,X1,Y1),hasBreeze(X1,Y1),"
+                //X2,Y2 is a neighbor of X0,Y0 and has a stanch
+                + "neighborOf(X0,Y0,X2,Y2),hasBreeze(X2,Y2),"
+                //X3,Y3 is a neighbor of X0,Y0 and has a stench
+                + "neighborOf(X0,Y0,X3,Y3),hasBreeze(X3,Y3)"
+            + "))";
+        Query.hasSolution(case1pit);
+        
+        //          not(b)
+        //not(b)    b       p
+        //          not(b)
+        //if three cells around a breezy cell are not breezy
+        //then the remaining cell is definitely a pit
+        String case2pit = "assert(("
+            + "case2pit(X0,Y0):-"
+                //they're all different cells
+                //0 dif 1,2,3,4
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),dif(position(X0,Y0),position(X4,Y4)),"
+                //1 dif 2,3,4
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),dif(position(X1,Y1),position(X4,Y4)),"
+                //2 dif 3,4
+                + "dif(position(X2,Y2),position(X3,Y3)),dif(position(X2,Y2),position(X4,Y4)),"
+                //3 dif 4
+                + "dif(position(X3,Y3),position(X4,Y4)),"
+                
+                //X2,Y2 is a neighbor and does have a stench
+                + "neighborOf(X0,Y0,X2,Y2),hasBreeze(X2,Y2),"
+                //X1,Y1 is a neighbor and does not have a stench
+                + "neighborOf(X0,Y0,X1,Y1),not(hasBreeze(X1,Y1)),"
+                //X3,Y3 is a neighbor and does not have a stench
+                + "neighborOf(X0,Y0,X3,Y3),not(hasBreeze(X3,Y3)),"
+                //X4,Y4 is a neighbor and does not have a stanch
+                + "neighborOf(X0,Y0,X4,Y4),not(hasBreeze(X4,Y4))"
+            + "))";
+        Query.hasSolution(case2pit);
+        
+        //handles cases where there is definitely a pit
+        String hasPit = "assert(("
+                + "hasPit(X,Y):-"
+                    //first case is true or
+                    + "case1pit(X,Y);"
+                    //second case is true
+                    + "case2pit(X,Y)"
+                + "))";
+        Query.hasSolution(hasPit);
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
