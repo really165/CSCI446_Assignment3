@@ -44,7 +44,10 @@ public class Main {
             initialAssertions(mazeDimension);
             //starts at the start position at time 0
             int row = mazeDimension-1, column = 0, time = 0;
+            //print out the maze
             printMaze(maze);
+            //print out the starting position
+            System.out.println("Starting position: ("+row+", "+column+"), which is the bottom left corner.");
 
             //keeps track if we survived
             boolean dead = false;
@@ -83,7 +86,7 @@ public class Main {
                     }
                     //there's a hazard in the current cell
                     else{
-                        System.out.println("You heckin died boi: current position is: (" + row + ", " + column + ")");
+                        System.out.println("You died: current position is: (" + row + ", " + column + ")");
                         dead = true;
                         break;
                     }
@@ -560,8 +563,8 @@ public class Main {
         //
         //you have three of the corners of a cell in question
         //that cell might have a wumpus
-        String maybeWumpus = "assert(("
-            + "maybeWumpus(X0,Y0):-"
+        String maybeWumpus1 = "assert(("
+            + "maybeWumpus1(X0,Y0):-"
                 //all of the cells have different positions
                 //0 dif 1,2,3
                 + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
@@ -586,6 +589,55 @@ public class Main {
                 //1, 2, and 3 have been visited
                 + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
+        Query.hasSolution(maybeWumpus1);
+        
+        //                  not(v)
+        //v and not(s)      v and s         w and not(v)
+        //                  v and not(s)
+        //there are two adjacent cells with no stench
+        //the one you're in has a stench
+        //one of the remaining cells has the wumpus
+        String maybeWumpus2 = "assert(("
+            + "maybeWumpus2(X0,Y0):-"
+                //they're all different cells
+                //0 dif 1,2,3,4
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),dif(position(X0,Y0),position(X4,Y4)),"
+                //1 dif 2,3,4
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),dif(position(X1,Y1),position(X4,Y4)),"
+                //2 dif 3,4
+                + "dif(position(X2,Y2),position(X3,Y3)),dif(position(X2,Y2),position(X4,Y4)),"
+                //3 dif 4
+                + "dif(position(X3,Y3),position(X4,Y4)),"
+                
+                //1,2,3 are visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3),"
+                //0,4 not visited
+                + "not(visited(X0,Y0)),not(visited(X4,Y4)),"
+                
+                //2 has a stench
+                + "hasStench(X2,Y2),"
+                //1,3 don't have a stench
+                + "not(hasStench(X1,Y1)),not(hasStench(X3,Y3)),"
+                
+                //1,2 are neighbors
+                + "neighborOf(X1,Y1,X2,Y2),"
+                //3,2 are neighbors
+                + "neighborOf(X3,Y3,X2,Y2),"
+                //4,2 are neighbors
+                + "neighborOf(X4,Y4,X2,Y2),"
+                //0,2 are neighbors
+                + "neighborOf(X0,Y0,X2,Y2)"
+            + "))";
+        Query.hasSolution(maybeWumpus2);
+        
+        //handles maybe cases for wumpus
+        String maybeWumpus = "assert(("
+            + "maybeWumpus(X,Y):-"
+                //first maybe case is true or
+                + "maybeWumpus1(X,Y);"
+                //second maybe case is true
+                + "maybeWumpus2(X,Y)"
+            + "))";
         Query.hasSolution(maybeWumpus);
         
         //b         p
@@ -593,8 +645,8 @@ public class Main {
         //
         //you have three of the corners of a cell in question
         //that cell might have a pit
-        String maybePit = "assert(("
-            + "maybePit(X0,Y0):-"
+        String maybePit1 = "assert(("
+            + "maybePit1(X0,Y0):-"
                 //all of the cells have different positions
                 //0 dif 1,2,3
                 + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
@@ -619,11 +671,60 @@ public class Main {
                 //1, 2, and 3 have been visited
                 + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
+        Query.hasSolution(maybePit1);
+        
+        //                  not(v)
+        //v and not(b)      v and b         p and not(b)
+        //                  v and not(b)
+        //there are two adjacent cells with no stench
+        //the one you're in has a stench
+        //one of the remaining cells has the wumpus
+        String maybePit2 = "assert(("
+            + "maybePit2(X0,Y0):-"
+                //they're all different cells
+                //0 dif 1,2,3,4
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),dif(position(X0,Y0),position(X4,Y4)),"
+                //1 dif 2,3,4
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),dif(position(X1,Y1),position(X4,Y4)),"
+                //2 dif 3,4
+                + "dif(position(X2,Y2),position(X3,Y3)),dif(position(X2,Y2),position(X4,Y4)),"
+                //3 dif 4
+                + "dif(position(X3,Y3),position(X4,Y4)),"
+                
+                //1,2,3 are visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3),"
+                //0,4 not visited
+                + "not(visited(X0,Y0)),not(visited(X4,Y4)),"
+                
+                //2 has a breeze
+                + "hasBreeze(X2,Y2),"
+                //1,3 don't have a breeze
+                + "not(hasBreeze(X1,Y1)),not(hasBreeze(X3,Y3)),"
+                
+                //1,2 are neighbors
+                + "neighborOf(X1,Y1,X2,Y2),"
+                //3,2 are neighbors
+                + "neighborOf(X3,Y3,X2,Y2),"
+                //4,2 are neighbors
+                + "neighborOf(X4,Y4,X2,Y2),"
+                //0,2 are neighbors
+                + "neighborOf(X0,Y0,X2,Y2)"
+            + "))";
+        Query.hasSolution(maybePit2);
+        
+        //handles maybe cases for pit
+        String maybePit = "assert(("
+            + "maybePit(X,Y):-"
+                //first maybe case is true or
+                + "maybePit1(X,Y);"
+                //second maybe case is true
+                + "maybePit2(X,Y)"
+            + "))";
         Query.hasSolution(maybePit);
         
         String maybeHazard = "assert(("
             + "maybeHazard(X,Y):-"
-                //might have wumpus
+                //might have wumpus or
                 + "maybeWumpus(X,Y);"
                 //might have pit
                 + "maybePit(X,Y)"
