@@ -6,6 +6,7 @@ public class Cell{
     boolean stench = false, breeze = false, glitter = false;
     
     int row,column,time;
+    Cell[][] maze = null;
     
     public Cell(){
     }
@@ -15,5 +16,13 @@ public class Cell{
         this.row = r;
         this.column = c;
         this.time = t;
+    }
+    
+    //constructor with row, column, time, and maze
+    public Cell(int r, int c, int t, Cell[][] m){
+        this.row = r;
+        this.column = c;
+        this.time = t;
+        this.maze = m;
     }
 }
