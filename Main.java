@@ -887,7 +887,8 @@ public class Main {
             int row2 = java.lang.Integer.parseInt(results.get("X2").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y2").toString());
             //find the time that the cell was moved to
-            int time2 = timeOfMove(row2, column2);
+            time1 = minTimeOfMove(row1, column1);
+            int time2 = maxTimeOfMove(row2, column2);
             //find the difference in time between the two
             int differenceInTime = time1-time2;
             //the current time is the first time plus the difference in time
@@ -917,7 +918,8 @@ public class Main {
             int row2 = java.lang.Integer.parseInt(results.get("X2").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y2").toString());
             //find the time that the cell was moved to
-            int time2 = timeOfMove(row2, column2);
+            time1 = minTimeOfMove(row1, column1);
+            int time2 = maxTimeOfMove(row2, column2);
             //find the difference in time between the two
             int differenceInTime = time1-time2;
             //the current time is the first time plus the difference in time
@@ -986,8 +988,8 @@ public class Main {
     }
     
     //finds the time a move was made
-    //given coordinates
-    public static int timeOfMove(int row2, int column2){
+    //given coordinates  
+    public static int maxTimeOfMove(int row2, int column2){
         int maxTime = -1;
 
         String timeOfMove = "move("+row2+","+column2+",T)";
@@ -1002,6 +1004,23 @@ public class Main {
         }
         
         return maxTime;
+    }
+    
+    public static int minTimeOfMove(int row2, int column2){
+        int minTime = 1000000000;
+
+        String timeOfMove = "move("+row2+","+column2+",T)";
+        if(Query.hasSolution(timeOfMove)){
+            Query times = new Query(timeOfMove);
+            while (times.hasMoreSolutions()) {
+		Map<String, Term> time = times.nextSolution();
+                if(java.lang.Integer.parseInt(time.get("T").toString())<minTime){
+                    minTime = java.lang.Integer.parseInt(time.get("T").toString());
+                }
+            }
+        }
+        
+        return minTime;
     }
     
     public static boolean inStartingPos(Cell pos, int dimension){
