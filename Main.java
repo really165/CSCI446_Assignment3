@@ -578,6 +578,31 @@ public class Main {
                 + "maybePit(X,Y)"
             + "))";
         Query.hasSolution(maybeHazard);
+        
+        //same as dangerous move
+        //except doesn't rule out maybe cases
+        //basically kills self if nothing else is found
+        //there's a small chance of survival though
+        String veryDangerousMove = "assert(("
+                + "veryDangerousMove(X1,Y1,X2,Y2):-"
+                    //first an second position are different
+                    + "dif(position(X1,Y1),position(X2,Y2)),"
+                    //first and second cell are neighbors
+                    + "neighborOf(X1,Y1,X2,Y2),"
+                    //first position is a valid
+                    + "position(X1,Y1),"
+                    //second position is a valid
+                    + "position(X2,Y2),"
+                    //first cell has been visited already
+                    + "visited(X1,Y1),"
+                    //second cell has not been visited already
+                    + "not(visited(X2,Y2)),"
+                    //it's dangerous to move from the first cell
+                    + "dangerousToMove(X1,Y1),"
+                    //there definitely isn't a hazard there based on what we know
+                    + "not(hasHazard(X2,Y2)),"
+                + "))";
+        Query.hasSolution(veryDangerousMove);
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
@@ -607,6 +632,7 @@ public class Main {
         String safeFrontier = "safeMove(X1,Y1,X2,Y2)";
         String dangerousAdjacent = "dangerousMove("+row1+","+column1+",X,Y)";
         String dangerousFrontier = "dangerousMove(X1,Y1,X2,Y2)";
+        String veryDangerousMove = "veryDangerousMove("+row1+","+column1+",X,Y)";
         //if there's a safe move adjacent to current position
         if(Query.hasSolution(safeAdjacent)){
             System.out.println("There's a safe move adjacent to current position");
@@ -639,6 +665,18 @@ public class Main {
             //backtrack
             result = previousMove(time);
         }
+        //last resort
+        //if nothing is found, moves to an adjacent cell
+        //even if it might be dangerous
+        else if(Query.hasSolution(veryDangerousMove)){
+            System.out.println("No more moves left: going to an adjacent cell at current position");
+            //retrieve the position of the very dangerous move
+            Query adj = new Query(veryDangerousMove);
+            Map<String, Term> results = adj.oneSolution();
+            int row2 = java.lang.Integer.parseInt(results.get("X").toString());
+            int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
+            result = new Cell(row2,column2,time);
+        }
         
         return result;
     }
@@ -659,22 +697,7 @@ public class Main {
         }
         return result;
     }
-    /*
-    public static Cell goToStart(int time){
-        Cell result = null;
-        //keeps track of current time to make new moves
-        int newTime = time;
-        while(time>0){
-            Cell lastMove = previousMove(time);
-            result = lastMove;
-            time--;
-            newTime++;
-            String move = "assert((move("+lastMove.row+","+lastMove.column+","+newTime+")))";
-            Query.hasSolution(move);
-        }
-        return result;
-    }
-    */
+    
     public static boolean inStartingPos(Cell pos, int dimension){
         int row = pos.row;
         int column = pos.column;
