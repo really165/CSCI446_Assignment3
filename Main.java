@@ -343,12 +343,18 @@ public class Main {
                 //2 dif 3
                 + "dif(position(X2,Y2),position(X3,Y3)),"
                 
+                
                 //X1,Y1 is a neighbor of X0,Y0 and has a stench
                 + "neighborOf(X0,Y0,X1,Y1),hasStench(X1,Y1),"
                 //X2,Y2 is a neighbor of X0,Y0 and has a stanch
                 + "neighborOf(X0,Y0,X2,Y2),hasStench(X2,Y2),"
                 //X3,Y3 is a neighbor of X0,Y0 and has a stench
-                + "neighborOf(X0,Y0,X3,Y3),hasStench(X3,Y3)"
+                + "neighborOf(X0,Y0,X3,Y3),hasStench(X3,Y3),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, and 3 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
         Query.hasSolution(case1wumpus);
         
@@ -376,7 +382,12 @@ public class Main {
                 //X3,Y3 is a neighbor and does not have a stench
                 + "neighborOf(X0,Y0,X3,Y3),not(hasStench(X3,Y3)),"
                 //X4,Y4 is a neighbor and does not have a stanch
-                + "neighborOf(X0,Y0,X4,Y4),not(hasStench(X4,Y4))"
+                + "neighborOf(X0,Y0,X4,Y4),not(hasStench(X4,Y4)),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, 3, and 4 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3),visited(X4,Y4)"
             + "))";
         Query.hasSolution(case2wumpus);
         
@@ -404,7 +415,12 @@ public class Main {
                 //2 is a neighbor of 1
                 + "neighborOf(X2,Y2,X1,Y1),"
                 //2 is a neighbor of 3
-                + "neighborOf(X2,Y2,X3,Y3)"
+                + "neighborOf(X2,Y2,X3,Y3),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, and 3 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
         Query.hasSolution(case3wumpus);
         
@@ -442,7 +458,12 @@ public class Main {
                 //X2,Y2 is a neighbor of X0,Y0 and has a stanch
                 + "neighborOf(X0,Y0,X2,Y2),hasBreeze(X2,Y2),"
                 //X3,Y3 is a neighbor of X0,Y0 and has a stench
-                + "neighborOf(X0,Y0,X3,Y3),hasBreeze(X3,Y3)"
+                + "neighborOf(X0,Y0,X3,Y3),hasBreeze(X3,Y3),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, and 3 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
         Query.hasSolution(case1pit);
         
@@ -470,7 +491,12 @@ public class Main {
                 //X3,Y3 is a neighbor and does not have a stench
                 + "neighborOf(X0,Y0,X3,Y3),not(hasBreeze(X3,Y3)),"
                 //X4,Y4 is a neighbor and does not have a stanch
-                + "neighborOf(X0,Y0,X4,Y4),not(hasBreeze(X4,Y4))"
+                + "neighborOf(X0,Y0,X4,Y4),not(hasBreeze(X4,Y4)),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, 3, and 4 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3),visited(X4,Y4)"
             + "))";
         Query.hasSolution(case2pit);
         
@@ -498,7 +524,12 @@ public class Main {
                 //2 is a neighbor of 1
                 + "neighborOf(X2,Y2,X1,Y1),"
                 //2 is a neighbor of 3
-                + "neighborOf(X2,Y2,X3,Y3)"
+                + "neighborOf(X2,Y2,X3,Y3),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, and 3 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
         Query.hasSolution(case3pit);
         
@@ -538,7 +569,12 @@ public class Main {
                 //2 is a neighbor of 1
                 + "neighborOf(X2,Y2,X1,Y1),"
                 //2 is a neighbor of 3
-                + "neighborOf(X2,Y2,X3,Y3)"
+                + "neighborOf(X2,Y2,X3,Y3),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, and 3 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
         Query.hasSolution(maybeWumpus);
         
@@ -566,7 +602,12 @@ public class Main {
                 //2 is a neighbor of 1
                 + "neighborOf(X2,Y2,X1,Y1),"
                 //2 is a neighbor of 3
-                + "neighborOf(X2,Y2,X3,Y3)"
+                + "neighborOf(X2,Y2,X3,Y3),"
+                
+                //0 has not been visited
+                + "not(visited(X0,Y0)),"
+                //1, 2, and 3 have been visited
+                + "visited(X1,Y1),visited(X2,Y2),visited(X3,Y3)"
             + "))";
         Query.hasSolution(maybePit);
         
@@ -600,7 +641,7 @@ public class Main {
                     //it's dangerous to move from the first cell
                     + "dangerousToMove(X1,Y1),"
                     //there definitely isn't a hazard there based on what we know
-                    + "not(hasHazard(X2,Y2)),"
+                    + "not(hasHazard(X2,Y2))"
                 + "))";
         Query.hasSolution(veryDangerousMove);
     }
