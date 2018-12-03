@@ -48,8 +48,11 @@ public class Main {
 
             //keeps track if we survived
             boolean dead = false;
+            //keeps track if we have the gold
+            boolean gold = false;
             
-            for(int i = 0; i < 5; i++){
+            //while we're not dead
+            while(!dead){
                 //see what's in the current cell
                 perceive(maze, row, column);
                 //if there's no gold in the current cell
@@ -87,11 +90,13 @@ public class Main {
                 }
                 //if there is gold in the current cell
                 else{
+                    gold = true;
                     break;
                 }
             }
-            //if we didn't die
-            if(!dead){
+            //if we didn't die and have the gold
+            if(!dead&&gold){
+                System.out.println("gold acquired: heading back");
                 int backtrackTime = time;
                 Cell currentPos = new Cell(row,column,time);
                 while(!inStartingPos(currentPos,mazeDimension)){
