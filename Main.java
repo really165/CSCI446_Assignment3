@@ -46,6 +46,9 @@ public class Main {
             int row = mazeDimension-1, column = 0, time = 0;
             printMaze(maze);
 
+            //keeps track if we survived
+            boolean dead = false;
+            
             for(int i = 0; i < 5; i++){
                 //see what's in the current cell
                 perceive(maze, row, column);
@@ -71,20 +74,39 @@ public class Main {
                         //there are no available moves for some reason
                         else{
                             System.out.println("No available moves");
+                            dead = true;
                             break;
                         }
                     }
                     //there's a hazard in the current cell
                     else{
-                        System.out.println("You heckin died boi");
+                        System.out.println("You heckin died boi: current position is: (" + row + ", " + column + ")");
+                        dead = true;
                         break;
                     }
                 }
                 //if there is gold in the current cell
                 else{
-                    System.out.println("We found the gold");
                     break;
                 }
+            }
+            //if we didn't die
+            if(!dead){
+                int backtrackTime = time;
+                Cell currentPos = new Cell(row,column,time);
+                while(!inStartingPos(currentPos,mazeDimension)){
+                    //backtrack to the entrance
+                    Cell nextMove = previousMove(backtrackTime);
+                    row = nextMove.row;
+                    column = nextMove.column;
+                    time++;
+                    //assert the new move
+                    String move = "asserta((move("+row+","+column+","+time+")))";
+                    Query.hasSolution(move);
+                    backtrackTime--;
+                    currentPos = nextMove;
+                }
+                System.out.println("after attempt to go back to starting area: (" + currentPos.row + ", " + currentPos.column + ")");
             }
         }
     }
@@ -279,7 +301,8 @@ public class Main {
                 + "))";
         Query.hasSolution(safeMove);
         
-        //finds move on the frontier that might be dangerous
+        //finds move from a cell with a breeze or stench
+        //uses both definite rules and maybe rules
         String dangerousMove = "assert(("
                 + "dangerousMove(X1,Y1,X2,Y2):-"
                     //first an second position are different
@@ -296,8 +319,10 @@ public class Main {
                     + "not(visited(X2,Y2)),"
                     //it's dangerous to move from the first cell
                     + "dangerousToMove(X1,Y1),"
-                    //there definitely isn't a hazard there
-                    + "not(hasHazard(X2,Y2))"
+                    //there definitely isn't a hazard there based on what we know
+                    + "not(hasHazard(X2,Y2)),"
+                    //handles maybe cases based on what we know
+                    + "not(maybeHazard(X2,Y2))"
                 + "))";
         Query.hasSolution(dangerousMove);
         
@@ -421,13 +446,78 @@ public class Main {
         
         //handles cases where there is definitely a pit
         String hasPit = "assert(("
-                + "hasPit(X,Y):-"
-                    //first case is true or
-                    + "case1pit(X,Y);"
-                    //second case is true
-                    + "case2pit(X,Y)"
-                + "))";
+            + "hasPit(X,Y):-"
+                //first case is true or
+                + "case1pit(X,Y);"
+                //second case is true
+                + "case2pit(X,Y)"
+            + "))";
         Query.hasSolution(hasPit);
+        
+        //s         w
+        //not(s)    s
+        //
+        //you have three of the corners of a cell in question
+        //that cell might have a wumpus
+        String maybeWumpus = "assert(("
+            + "maybeWumpus(X0,Y0):-"
+                //all of the cells have different positions
+                //0 dif 1,2,3
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
+                //1 dif 2,3
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),"
+                //2 dif 3
+                + "dif(position(X2,Y2),position(X3,Y3)),"
+                
+                //1 is a neighbor to 0 and has a stench
+                + "neighborOf(X1,Y1,X0,Y0),hasStench(X1,Y1),"
+                //3 is a neighbor of 0 and has a stench
+                + "neighborOf(X3,Y3,X0,Y0),hasStench(X3,Y3),"
+                //2 isn't a neighbor of 0 and doesn't have a stench
+                + "not(neighborOf(X2,Y2,X0,Y0)),not(hasStench(X2,Y2)),"
+                //2 is a neighbor of 1
+                + "neighborOf(X2,Y2,X1,Y1),"
+                //2 is a neighbor of 3
+                + "neighborOf(X2,Y2,X3,Y3)"
+            + "))";
+        Query.hasSolution(maybeWumpus);
+        
+        //b         p
+        //not(b)    b
+        //
+        //you have three of the corners of a cell in question
+        //that cell might have a pit
+        String maybePit = "assert(("
+            + "maybePit(X0,Y0):-"
+                //all of the cells have different positions
+                //0 dif 1,2,3
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
+                //1 dif 2,3
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),"
+                //2 dif 3
+                + "dif(position(X2,Y2),position(X3,Y3)),"
+                
+                //1 is a neighbor to 0 and has a breeze
+                + "neighborOf(X1,Y1,X0,Y0),hasBreeze(X1,Y1),"
+                //3 is a neighbor of 0 and has a breeze
+                + "neighborOf(X3,Y3,X0,Y0),hasBreeze(X3,Y3),"
+                //2 isn't a neighbor of 0 and doesn't have a breeze
+                + "not(neighborOf(X2,Y2,X0,Y0)),not(hasBreeze(X2,Y2)),"
+                //2 is a neighbor of 1
+                + "neighborOf(X2,Y2,X1,Y1),"
+                //2 is a neighbor of 3
+                + "neighborOf(X2,Y2,X3,Y3)"
+            + "))";
+        Query.hasSolution(maybePit);
+        
+        String maybeHazard = "assert(("
+            + "maybeHazard(X,Y):-"
+                //might have wumpus
+                + "maybeWumpus(X,Y),"
+                //might have pit
+                + "maybePit(X,Y)"
+            + "))";
+        Query.hasSolution(maybeHazard);
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
@@ -508,6 +598,34 @@ public class Main {
             result = new Cell(row, column, (time-1));
         }
         return result;
+    }
+    /*
+    public static Cell goToStart(int time){
+        Cell result = null;
+        //keeps track of current time to make new moves
+        int newTime = time;
+        while(time>0){
+            Cell lastMove = previousMove(time);
+            result = lastMove;
+            time--;
+            newTime++;
+            String move = "assert((move("+lastMove.row+","+lastMove.column+","+newTime+")))";
+            Query.hasSolution(move);
+        }
+        return result;
+    }
+    */
+    public static boolean inStartingPos(Cell pos, int dimension){
+        int row = pos.row;
+        int column = pos.column;
+        //if in the starting position
+        if((row==(dimension-1))&&(column==0)){
+            return true;
+        }
+        //else if not in starting position
+        else{
+            return false;
+        }
     }
     
     public static void printMaze(Cell[][] maze){
