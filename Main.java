@@ -848,7 +848,7 @@ public class Main {
             Map<String, Term> results = canShoot.oneSolution();
             int row2 = java.lang.Integer.parseInt(results.get("X").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
-            System.out.println("Shoot where we think the wumpus is.");
+            System.out.println("Shoot from (" + row1 + ", " + column1 + ") towards (" + row2 + ", " + column2 + ")");
             //if that cell has the wumpus
             if(maze[row2][column2].wumpus){
                 System.out.println("Scream is heard.");
@@ -988,16 +988,20 @@ public class Main {
     //finds the time a move was made
     //given coordinates
     public static int timeOfMove(int row2, int column2){
-        int time = -1;
+        int maxTime = -1;
 
         String timeOfMove = "move("+row2+","+column2+",T)";
         if(Query.hasSolution(timeOfMove)){
-            Query findTime = new Query(timeOfMove);
-            Map<String, Term> timeResult = findTime.oneSolution();
-            time = java.lang.Integer.parseInt(timeResult.get("T").toString());
+            Query times = new Query(timeOfMove);
+            while (times.hasMoreSolutions()) {
+		Map<String, Term> time = times.nextSolution();
+                if(java.lang.Integer.parseInt(time.get("T").toString())>maxTime){
+                    maxTime = java.lang.Integer.parseInt(time.get("T").toString());
+                }
+            }
         }
         
-        return time;
+        return maxTime;
     }
     
     public static boolean inStartingPos(Cell pos, int dimension){
