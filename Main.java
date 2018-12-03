@@ -57,6 +57,8 @@ public class Main {
             boolean dead = false;
             //keeps track if we have the gold
             boolean gold = false;
+            //int for score
+            int score = 0;
             
             //while we're not dead
             while(!dead){
@@ -94,7 +96,16 @@ public class Main {
                     }
                     //there's a hazard in the current cell
                     else{
-                        System.out.println("You died: current position is: (" + row + ", " + column + ").");
+                       //getting the score (time starts at 0)
+                    	if(hasArrow == true)
+                    	{
+                    		score = 0-time-1000;
+                    	}
+                    	else if(hasArrow ==false)
+                    	{
+                    		score = 0-time-1000-10;
+                    	}                 
+                    	System.out.println("You died: current position is: (" + row + ", " + column + ")." + " Score: " + score);
                         dead = true;
                         break;
                     }
@@ -127,8 +138,18 @@ public class Main {
                         backtrackTime--;
                     }
                 }
+              //getting the score
+                if(hasArrow == true)
+            	{
+            		score =  0-time+1000;
+            	}
+            	else if(hasArrow ==false)
+            	{
+            		score =  0-time+1000-10;
+            	}
+                
                 System.out.println("After attempt to go back to starting area: (" + currentPos.row + ", " + currentPos.column + ").");
-                System.out.println("Success.");
+                System.out.println("Success. Score: " + score);
             }
         }
     }
