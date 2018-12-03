@@ -380,13 +380,43 @@ public class Main {
             + "))";
         Query.hasSolution(case2wumpus);
         
+        //cases chen you're in a corner and the surrounding cells have a stench
+        //s         w
+        //not(s)    s
+        String case3wumpus = "assert(("
+            + "case3wumpus(X0,Y0):-"
+                //all of the cells have different positions
+                //0 dif 1,2,3
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
+                //1 dif 2,3
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),"
+                //2 dif 3
+                + "dif(position(X2,Y2),position(X3,Y3)),"
+                
+                //2 is a corner
+                + "isCorner(X2,Y2),"
+                //1 is a neighbor to 0 and has a stench
+                + "neighborOf(X1,Y1,X0,Y0),hasStench(X1,Y1),"
+                //3 is a neighbor of 0 and has a stench
+                + "neighborOf(X3,Y3,X0,Y0),hasStench(X3,Y3),"
+                //2 isn't a neighbor of 0 and doesn't have a stench
+                + "not(neighborOf(X2,Y2,X0,Y0)),not(hasStench(X2,Y2)),"
+                //2 is a neighbor of 1
+                + "neighborOf(X2,Y2,X1,Y1),"
+                //2 is a neighbor of 3
+                + "neighborOf(X2,Y2,X3,Y3)"
+            + "))";
+        Query.hasSolution(case3wumpus);
+        
         //handles cases where there is definitely a wumpus
         String hasWumpus = "assert(("
                 + "hasWumpus(X,Y):-"
                     //first case is true or
                     + "case1wumpus(X,Y);"
                     //second case is true
-                    + "case2wumpus(X,Y)"
+                    + "case2wumpus(X,Y);"
+                    //third case is true
+                    + "case3wumpus(X,Y)"
                 + "))";
         Query.hasSolution(hasWumpus);
         
@@ -444,13 +474,43 @@ public class Main {
             + "))";
         Query.hasSolution(case2pit);
         
+        //cases chen you're in a corner and the surrounding cells have a breeze
+        //b         p
+        //not(b)    b
+        String case3pit = "assert(("
+            + "case3pit(X0,Y0):-"
+                //all of the cells have different positions
+                //0 dif 1,2,3
+                + "dif(position(X0,Y0),position(X1,Y1)),dif(position(X0,Y0),position(X2,Y2)),dif(position(X0,Y0),position(X3,Y3)),"
+                //1 dif 2,3
+                + "dif(position(X1,Y1),position(X2,Y2)),dif(position(X1,Y1),position(X3,Y3)),"
+                //2 dif 3
+                + "dif(position(X2,Y2),position(X3,Y3)),"
+                
+                //2 is a corner
+                + "isCorner(X2,Y2),"
+                //1 is a neighbor to 0 and has a breeze
+                + "neighborOf(X1,Y1,X0,Y0),hasBreeze(X1,Y1),"
+                //3 is a neighbor of 0 and has a breeze
+                + "neighborOf(X3,Y3,X0,Y0),hasBreeze(X3,Y3),"
+                //2 isn't a neighbor of 0 and doesn't have a breeze
+                + "not(neighborOf(X2,Y2,X0,Y0)),not(hasBreeze(X2,Y2)),"
+                //2 is a neighbor of 1
+                + "neighborOf(X2,Y2,X1,Y1),"
+                //2 is a neighbor of 3
+                + "neighborOf(X2,Y2,X3,Y3)"
+            + "))";
+        Query.hasSolution(case3pit);
+        
         //handles cases where there is definitely a pit
         String hasPit = "assert(("
             + "hasPit(X,Y):-"
                 //first case is true or
                 + "case1pit(X,Y);"
                 //second case is true
-                + "case2pit(X,Y)"
+                + "case2pit(X,Y);"
+                //third case is true
+                + "case3pit(X,Y)"
             + "))";
         Query.hasSolution(hasPit);
         
@@ -513,7 +573,7 @@ public class Main {
         String maybeHazard = "assert(("
             + "maybeHazard(X,Y):-"
                 //might have wumpus
-                + "maybeWumpus(X,Y),"
+                + "maybeWumpus(X,Y);"
                 //might have pit
                 + "maybePit(X,Y)"
             + "))";
