@@ -7,6 +7,10 @@ import org.jpl7.*;
 import java.util.Random;
 
 public class Main {
+    
+    //start out with an arrow
+    static boolean hasArrow = true;
+    
     public static void main(String[] args){
         Cell[][] maze = null;
         int mazeDimension = 0;
@@ -63,30 +67,34 @@ public class Main {
                     //check if there's a hazard
                     if(!maze[row][column].wumpus&&!maze[row][column].pit){
                         //find the next move
-                        Cell nextMove = nextMove(row,column,time);
+                        Cell nextMove = nextMove(row,column,time,maze);
                         //if a valid move was found
                         if(nextMove != null){
                             //update current position and time
                             row = nextMove.row;
                             column = nextMove.column;
                             time = nextMove.time;
+                            //if there were changes to the maze
+                            if(nextMove.maze!=null){
+                                maze = nextMove.maze;
+                            }
                             //assert the new move
                             String move = "asserta((move("+row+","+column+","+time+")))";
                             Query.hasSolution(move);
                             String visited = "asserta((visited("+row+","+column+")))";
                             Query.hasSolution(visited);
-                            System.out.println("moved to (" + row + ", " + column + "): current time is " + time);
+                            System.out.println("Moved to (" + row + ", " + column + "): current time is " + time + ".");
                         }
                         //there are no available moves for some reason
                         else{
-                            System.out.println("No available moves");
+                            System.out.println("No available moves.");
                             dead = true;
                             break;
                         }
                     }
                     //there's a hazard in the current cell
                     else{
-                        System.out.println("You died: current position is: (" + row + ", " + column + ")");
+                        System.out.println("You died: current position is: (" + row + ", " + column + ").");
                         dead = true;
                         break;
                     }
@@ -99,7 +107,7 @@ public class Main {
             }
             //if we didn't die and have the gold
             if(!dead&&gold){
-                System.out.println("gold acquired: heading back");
+                System.out.println("Gold acquired: heading back.");
                 int backtrackTime = time;
                 Cell currentPos = new Cell(row,column,time);
                 while(!inStartingPos(currentPos,mazeDimension)){
@@ -119,7 +127,8 @@ public class Main {
                         backtrackTime--;
                     }
                 }
-                System.out.println("after attempt to go back to starting area: (" + currentPos.row + ", " + currentPos.column + ")");
+                System.out.println("After attempt to go back to starting area: (" + currentPos.row + ", " + currentPos.column + ").");
+                System.out.println("Success.");
             }
         }
     }
@@ -145,7 +154,7 @@ public class Main {
             wumpusColumn = rand.nextInt(dimension);
         }
         result[wumpusRow][wumpusColumn].wumpus = true;
-        System.out.println("place wumpus in ("+wumpusRow+", "+wumpusColumn+")");
+        System.out.println("Place wumpus in ("+wumpusRow+", "+wumpusColumn+").");
         //add a stench to the surrounding cells
         if(wumpusRow-1>=0){
             result[wumpusRow-1][wumpusColumn].stench = true;
@@ -169,7 +178,7 @@ public class Main {
             goldColumn = rand.nextInt(dimension);
         }
         result[goldRow][goldColumn].gold = true;
-        System.out.println("place gold in ("+goldRow+", "+goldColumn+")");
+        System.out.println("Place gold in ("+goldRow+", "+goldColumn+").");
         //add a glitter to the cell
         result[goldRow][goldColumn].glitter = true;
         
@@ -183,7 +192,7 @@ public class Main {
                     if(pitProbability<20){
                         //place a pit in the cell
                         result[i][j].pit = true;
-                        System.out.println("place pit in ("+i+", "+j+")");
+                        System.out.println("Place pit in ("+i+", "+j+").");
                         //add a breeze to the surrounding cells
                         if(i-1>=0){
                             result[i-1][j].breeze = true;
@@ -755,16 +764,40 @@ public class Main {
                     + "not(hasHazard(X2,Y2))"
                 + "))";
         Query.hasSolution(veryDangerousMove);
+        
+        //if you know where the wumpus is
+        //and you're adjacent to the cell he's in
+        //you can shoot him from that cell
+        String canShootWumpus = "assert(("
+                + "canShootWumpus(X1,Y1,X2,Y2):-"
+                    //first an second position are different
+                    + "dif(position(X1,Y1),position(X2,Y2)),"
+                    //the first cell has a stench
+                    + "hasStench(X1,Y1),"
+                    //first and second cell are neighbors
+                    + "neighborOf(X1,Y1,X2,Y2),"
+                    //first position is a valid
+                    + "position(X1,Y1),"
+                    //second position is a valid
+                    + "position(X2,Y2),"
+                    //first cell has been visited already
+                    + "visited(X1,Y1),"
+                    //second cell has not been visited already
+                    + "not(visited(X2,Y2)),"
+                    //we know the second position has the wumpus
+                    + "hasWumpus(X2,Y2)"
+                + "))";
+        Query.hasSolution(canShootWumpus);
     }
     
     public static void perceive(Cell[][] maze, int row, int column){
         if(maze[row][column].breeze){
-            System.out.println("current position hasBreeze");
+            System.out.println("Current position has breeze.");
             String hasBreeze = "assert(hasBreeze("+row+","+column+"))";
             Query.hasSolution(hasBreeze);
         }
         if(maze[row][column].stench){
-            System.out.println("current position hasStench");
+            System.out.println("Current position has stench.");
             String hasStench = "assert(hasStench("+row+","+column+"))";
             Query.hasSolution(hasStench);
         }
@@ -777,17 +810,45 @@ public class Main {
     //takes in current position and time
     //returns cell with the coordinates of new move
     //and time that the cell that was moved from was moved to
-    public static Cell nextMove(int row1, int column1, int time1){
+    public static Cell nextMove(int row1, int column1, int time1, Cell[][] maze){
         Cell result = null;
         
+        String canShootWumpus = "canShootWumpus("+row1+","+column1+",X,Y)";
         String safeAdjacent = "safeMove("+row1+","+column1+",X,Y)";
         String safeFrontier = "safeMove(X1,Y1,X2,Y2)";
         String dangerousAdjacent = "dangerousMove("+row1+","+column1+",X,Y)";
         String dangerousFrontier = "dangerousMove(X1,Y1,X2,Y2)";
         String veryDangerousMove = "veryDangerousMove("+row1+","+column1+",X,Y)";
+        //if we can shoot the wumpus from the current cell and we have an arrow
+        if(Query.hasSolution(canShootWumpus)&&hasArrow){
+            System.out.println("We can shoot the wumpus from current position.");
+            //retrieve the position of the wumpus
+            Query canShoot = new Query(canShootWumpus);
+            Map<String, Term> results = canShoot.oneSolution();
+            int row2 = java.lang.Integer.parseInt(results.get("X").toString());
+            int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
+            System.out.println("Shoot where we think the wumpus is.");
+            //if that cell has the wumpus
+            if(maze[row2][column2].wumpus){
+                System.out.println("Scream is heard.");
+                //remove the wumpus from the maze
+                //retract assertions associated with him
+                maze = removeWumpus(maze);
+            }
+            //if we were wrong
+            else{
+                System.out.println("Scream is not heard.");
+                //assert that the cell doesn't have the wumpus
+                String noWumpus = "asserta(((not(hasWumpus("+row2+","+column2+")))))";
+                Query.hasSolution(noWumpus);
+            }
+            //we don't have the arrow anymore
+            hasArrow = false;
+            result = new Cell(row1,column1,time1,maze);
+        }
         //if there's a safe move adjacent to current position
-        if(Query.hasSolution(safeAdjacent)){
-            System.out.println("There's a safe move adjacent to current position");
+        else if(Query.hasSolution(safeAdjacent)){
+            System.out.println("There's a safe move adjacent to current position.");
             //retrieve the position of the safe move
             Query adj = new Query(safeAdjacent);
             Map<String, Term> results = adj.oneSolution();
@@ -798,7 +859,7 @@ public class Main {
         }
         //if there's a safe move on the frontier
         else if(Query.hasSolution(safeFrontier)){
-            System.out.println("There's a safe move on the frontier");
+            System.out.println("There's a safe move on the frontier.");
             //find the cell's position
             Query adj = new Query(safeFrontier);
             Map<String, Term> results = adj.oneSolution();
@@ -817,7 +878,7 @@ public class Main {
         }
         //if there's a dangerous move adjacent to current position
         else if(Query.hasSolution(dangerousAdjacent)){
-            System.out.println("There's a dangerous move adjacent to current position");
+            System.out.println("There's a dangerous move adjacent to current position.");
             //retrieve the position of the dangerous move
             Query adj = new Query(dangerousAdjacent);
             Map<String, Term> results = adj.oneSolution();
@@ -828,7 +889,7 @@ public class Main {
         }
         //is there's a dangerous move on the frontier
         else if(Query.hasSolution(dangerousFrontier)){
-            System.out.println("There's a dangerous move on the frontier");
+            System.out.println("There's a dangerous move on the frontier.");
             //find the cell's position
             Query adj = new Query(dangerousFrontier);
             Map<String, Term> results = adj.oneSolution();
@@ -849,7 +910,7 @@ public class Main {
         //if nothing is found, moves to an adjacent cell
         //even if it might be dangerous
         else if(Query.hasSolution(veryDangerousMove)){
-            System.out.println("No more moves left: going to an adjacent cell at current position");
+            System.out.println("No more moves left: going to an adjacent cell at current position.");
             //retrieve the position of the very dangerous move
             Query adj = new Query(veryDangerousMove);
             Map<String, Term> results = adj.oneSolution();
@@ -860,6 +921,30 @@ public class Main {
         }
         
         return result;
+    }
+    
+    //removes wumpus from the maze
+    //along with any assumptions associated with him
+    public static Cell[][] removeWumpus(Cell[][] maze){
+        //go through each cell of the maze
+        for(int i = 0; i < maze.length; i++){
+            for(int j = 0; j < maze[0].length; j++){
+                //if that cell has the wumpus
+                if(maze[i][j].wumpus){
+                    //remove the wumpus
+                    maze[i][j].wumpus = false;
+                }
+                //if that cell has a stench
+                if(maze[i][j].stench){
+                    //remove the wumpus
+                    maze[i][j].stench = false;
+                    //retract the assertion that there is a stench in that cell
+                    String noStench = "retract(hasStench("+i+","+j+"))";
+                    Query.hasSolution(noStench);
+                }
+            }
+        }
+        return maze;
     }
     
     //takes in current time
