@@ -66,7 +66,7 @@ public class Main {
                             //update current position and time
                             row = nextMove.row;
                             column = nextMove.column;
-                            time++;
+                            time = nextMove.time;
                             //assert the new move
                             String move = "asserta((move("+row+","+column+","+time+")))";
                             Query.hasSolution(move);
@@ -100,16 +100,21 @@ public class Main {
                 int backtrackTime = time;
                 Cell currentPos = new Cell(row,column,time);
                 while(!inStartingPos(currentPos,mazeDimension)){
-                    //backtrack to the entrance
-                    Cell nextMove = previousMove(backtrackTime);
-                    row = nextMove.row;
-                    column = nextMove.column;
-                    time++;
-                    //assert the new move
-                    String move = "asserta((move("+row+","+column+","+time+")))";
-                    Query.hasSolution(move);
-                    backtrackTime--;
-                    currentPos = nextMove;
+                    if(previousMove(backtrackTime)!=null){
+                        //backtrack to the entrance
+                        Cell nextMove = previousMove(backtrackTime);
+                        row = nextMove.row;
+                        column = nextMove.column;
+                        time++;
+                        //assert the new move
+                        String move = "asserta((move("+row+","+column+","+time+")))";
+                        Query.hasSolution(move);
+                        backtrackTime--;
+                        currentPos = nextMove;
+                    }
+                    else{
+                        backtrackTime--;
+                    }
                 }
                 System.out.println("after attempt to go back to starting area: (" + currentPos.row + ", " + currentPos.column + ")");
             }
@@ -671,7 +676,7 @@ public class Main {
     //takes in current position and time
     //returns cell with the coordinates of new move
     //and time that the cell that was moved from was moved to
-    public static Cell nextMove(int row1, int column1, int time){
+    public static Cell nextMove(int row1, int column1, int time1){
         Cell result = null;
         
         String safeAdjacent = "safeMove("+row1+","+column1+",X,Y)";
@@ -687,13 +692,27 @@ public class Main {
             Map<String, Term> results = adj.oneSolution();
             int row2 = java.lang.Integer.parseInt(results.get("X").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
-            result = new Cell(row2,column2,time);
+            time1++;
+            result = new Cell(row2,column2,time1);
         }
         //if there's a safe move on the frontier
         else if(Query.hasSolution(safeFrontier)){
             System.out.println("There's a safe move on the frontier");
-            //backtrack
-            result = previousMove(time);
+            //find the cell's position
+            Query adj = new Query(safeFrontier);
+            Map<String, Term> results = adj.oneSolution();
+            int row2 = java.lang.Integer.parseInt(results.get("X2").toString());
+            int column2 = java.lang.Integer.parseInt(results.get("Y2").toString());
+            //find the time that the cell was moved to
+            int time2 = timeOfMove(row2, column2);
+            //find the difference in time between the two
+            int differenceInTime = time1-time2;
+            //the current time is the first time plus the difference in time
+            int currentTime = time1+differenceInTime;
+            //assert the new move
+            String move = "asserta((move("+row2+","+column2+","+currentTime+")))";
+            Query.hasSolution(move);
+            result = new Cell(row2,column2,currentTime);
         }
         //if there's a dangerous move adjacent to current position
         else if(Query.hasSolution(dangerousAdjacent)){
@@ -703,13 +722,27 @@ public class Main {
             Map<String, Term> results = adj.oneSolution();
             int row2 = java.lang.Integer.parseInt(results.get("X").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
-            result = new Cell(row2,column2,time);
+            time1++;
+            result = new Cell(row2,column2,time1);
         }
         //is there's a dangerous move on the frontier
         else if(Query.hasSolution(dangerousFrontier)){
             System.out.println("There's a dangerous move on the frontier");
-            //backtrack
-            result = previousMove(time);
+            //find the cell's position
+            Query adj = new Query(dangerousFrontier);
+            Map<String, Term> results = adj.oneSolution();
+            int row2 = java.lang.Integer.parseInt(results.get("X2").toString());
+            int column2 = java.lang.Integer.parseInt(results.get("Y2").toString());
+            //find the time that the cell was moved to
+            int time2 = timeOfMove(row2, column2);
+            //find the difference in time between the two
+            int differenceInTime = time1-time2;
+            //the current time is the first time plus the difference in time
+            int currentTime = time1+differenceInTime;
+            //assert the new move
+            String move = "asserta((move("+row2+","+column2+","+currentTime+")))";
+            Query.hasSolution(move);
+            result = new Cell(row2,column2,currentTime);
         }
         //last resort
         //if nothing is found, moves to an adjacent cell
@@ -721,7 +754,8 @@ public class Main {
             Map<String, Term> results = adj.oneSolution();
             int row2 = java.lang.Integer.parseInt(results.get("X").toString());
             int column2 = java.lang.Integer.parseInt(results.get("Y").toString());
-            result = new Cell(row2,column2,time);
+            time1++;
+            result = new Cell(row2,column2,time1);
         }
         
         return result;
@@ -742,6 +776,21 @@ public class Main {
             result = new Cell(row, column, (time-1));
         }
         return result;
+    }
+    
+    //finds the time a move was made
+    //given coordinates
+    public static int timeOfMove(int row2, int column2){
+        int time = -1;
+
+        String timeOfMove = "move("+row2+","+column2+",T)";
+        if(Query.hasSolution(timeOfMove)){
+            Query findTime = new Query(timeOfMove);
+            Map<String, Term> timeResult = findTime.oneSolution();
+            time = java.lang.Integer.parseInt(timeResult.get("T").toString());
+        }
+        
+        return time;
     }
     
     public static boolean inStartingPos(Cell pos, int dimension){
