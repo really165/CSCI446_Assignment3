@@ -414,8 +414,8 @@ public class Main {
                 //2 dif 3
                 + "dif(position(X2,Y2),position(X3,Y3)),"
                 
-                //2 is a corner
-                + "isCorner(X2,Y2),"
+                //1,2, or 3 is a corner
+                + "(isCorner(X1,Y1);isCorner(X2,Y2);isCorner(X3,Y3)),"
                 //1 is a neighbor to 0 and has a stench
                 + "neighborOf(X1,Y1,X0,Y0),hasStench(X1,Y1),"
                 //3 is a neighbor of 0 and has a stench
@@ -523,8 +523,8 @@ public class Main {
                 //2 dif 3
                 + "dif(position(X2,Y2),position(X3,Y3)),"
                 
-                //2 is a corner
-                + "isCorner(X2,Y2),"
+                //1,2, or 3 is a corner
+                + "(isCorner(X1,Y1);isCorner(X2,Y2);isCorner(X3,Y3)),"
                 //1 is a neighbor to 0 and has a breeze
                 + "neighborOf(X1,Y1,X0,Y0),hasBreeze(X1,Y1),"
                 //3 is a neighbor of 0 and has a breeze
